@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Scraper - Business Data Extraction</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .results-count {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-buttons button {
+            width: auto;
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+
+        .leads-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .leads-table thead,
+        .leads-table tbody {
+            display: block;
+        }
+
+        .leads-table thead {
+            background: #f8f9fa;
+        }
+
+        .leads-table tr {
+            display: grid;
+            grid-template-columns: 1.5fr 2fr 1fr 1.5fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .leads-table th,
+        .leads-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .leads-table th {
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+
+        .leads-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .leads-table td {
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .leads-table td.expandable {
+            white-space: normal;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .leads-table {
+                font-size: 0.85em;
+            }
+            
+            .leads-table tr {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            
+            .leads-table th,
+            .leads-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Lead Scraper</h1>
+            <p>Extract business data by location and industry</p>
+        </div>
+
+        <div class="card">
+            <form id="scrapeForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">📍 Location *</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            name="location" 
+                            placeholder="e.g., New York, NY or San Francisco, CA"
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="work_type">💼 Business Type / Industry *</label>
+                        <input 
+                            type="text" 
+                            id="work_type" 
+                            name="work_type" 
+                            placeholder="e.g., restaurants, law firms, tech companies"
+                            required
+                        >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="max_results">📊 Maximum Results</label>
+                    <input 
+                        type="number" 
+                        id="max_results" 
+                        name="max_results" 
+                        value="50" 
+                        min="1" 
+                        max="100"
+                    >
+                </div>
+                <button type="submit" class="btn" id="scrapeBtn">
+                    🚀 Start Scraping
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Scraping leads... This may take a few minutes.</p>
+            </div>
+
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+        </div>
+
+        <div class="card results" id="results">
+            <div class="results-header">
+                <div class="results-count" id="resultsCount"></div>
+                <div class="export-buttons">
+                    <button class="btn btn-success" id="exportCSV">📥 Export CSV</button>
+                    <button class="btn btn-success" id="exportJSON">📥 Export JSON</button>
+                </div>
+            </div>
+            <div id="leadsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentLeads = [];
+
+        document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const location = document.getElementById('location').value;
+            const work_type = document.getElementById('work_type').value;
+            const max_results = document.getElementById('max_results').value;
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            const results = document.getElementById('results');
+            const scrapeBtn = document.getElementById('scrapeBtn');
+            
+            // Reset UI
+            loading.classList.add('active');
+            error.classList.remove('active');
+            success.classList.remove('active');
+            results.classList.remove('active');
+            scrapeBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        location,
+                        work_type,
+                        max_results: parseInt(max_results)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Scraping failed');
+                }
+                
+                currentLeads = data.leads || [];
+                
+                if (currentLeads.length === 0) {
+                    error.textContent = 'No leads found. Try different search terms.';
+                    error.classList.add('active');
+                } else {
+                    success.textContent = `Successfully scraped ${currentLeads.length} leads!`;
+                    success.classList.add('active');
+                    displayLeads(currentLeads);
+                }
+                
+            } catch (err) {
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+                scrapeBtn.disabled = false;
+            }
+        });
+        
+        function displayLeads(leads) {
+            const container = document.getElementById('leadsContainer');
+            const results = document.getElementById('results');
+            const resultsCount = document.getElementById('resultsCount');
+            
+            resultsCount.textContent = `Found ${leads.length} leads`;
+            results.classList.add('active');
+            
+            if (leads.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p>No leads found. Try adjusting your search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <div style="overflow-x: auto;">
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Website</th>
+                                <th>Category</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            leads.forEach(lead => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${escapeHtml(lead.name || 'N/A')}</strong></td>
+                        <td class="expandable">${escapeHtml(lead.address || 'N/A')}</td>
+                        <td>${escapeHtml(lead.phone || 'N/A')}</td>
+                        <td>${escapeHtml(lead.email || 'N/A')}</td>
+                        <td>${lead.website ? `<a href="${lead.website}" target="_blank" rel="noopener">Visit</a>` : 'N/A'}</td>
+                        <td>${escapeHtml(lead.category || 'N/A')}</td>
+                        <td>${escapeHtml(lead.rating || 'N/A')}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        document.getElementById('exportCSV').addEventListener('click', async () => {
+            if (currentLeads.length === 0) {
+                alert('No leads to export');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/export/csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ leads: currentLeads })
+                });
+                
+                if (!response.ok) throw new Error('Export failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(`Export error: ${err.message}`);
+            }
+        });
+        
+        document.getElementById('exportJSON').addEventListener('click', async () => {
+            if (currentLeads.length === 0) {
+                alert('No leads to export');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/export/json', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ leads: currentLeads })
+                });
+                
+                if (!response.ok) throw new Error('Export failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leads_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(`Export error: ${err.message}`);
+            }
+        });
+    </script>
+</body>
+</html>
+
