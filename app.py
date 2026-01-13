@@ -1390,7 +1390,10 @@ def export_json():
 
 if __name__ == '__main__':
     # Get port from environment variable (Railway/Render sets this)
+    # Railway uses PORT, Vercel uses different ports
     port = int(os.environ.get('PORT', 5000))
     # Disable debug mode to prevent server restarts that clear sessions
+    # Bind to 0.0.0.0 to accept connections from all interfaces
+    print(f"🚀 Starting Flask app on port {port}")
     app.run(debug=False, port=port, host='0.0.0.0')
 
