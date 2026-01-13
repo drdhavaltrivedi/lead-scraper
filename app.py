@@ -754,7 +754,7 @@ class LeadScraper:
                 # Use a fresh browser for better results
                 browser = await p.chromium.launch(
                     headless=True,  # Set to False to see browser
-                    args=['--start-maximized']
+                    args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--start-maximized']
                 )
                 
                 for search_term in search_terms[:3]:  # Limit to 3 search terms
