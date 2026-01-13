@@ -8,12 +8,21 @@
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "app.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
   ],
   "env": {
     "PYTHON_VERSION": "3.12"
+  },
+  "functions": {
+    "app.py": {
+      "maxDuration": 60
+    }
   }
 }
 

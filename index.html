@@ -421,10 +421,13 @@
                             type="number" 
                             id="max_results" 
                             name="max_results" 
-                            value="50" 
+                            value="20" 
                             min="1" 
-                            max="100"
+                            max="20"
                         >
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Vercel limit: Maximum 20 results (optimized for 60-second timeout)
+                        </small>
                     </div>
                     <button type="submit" class="btn" id="scrapeBtn">
                         🚀 Start Scraping
@@ -511,12 +514,12 @@
                             type="number" 
                             id="icp_max_results" 
                             name="icp_max_results" 
-                            value="50" 
+                            value="15" 
                             min="1" 
-                            max="100"
+                            max="15"
                         >
                         <small style="color: #666; display: block; margin-top: 5px;">
-                            Note: This mode checks more businesses to find ones without websites, so it may take longer.
+                            Vercel limit: Maximum 15 results (optimized for 60-second timeout)
                         </small>
                     </div>
                     <button type="submit" class="btn btn-icp" id="icpScrapeBtn">
@@ -715,17 +718,13 @@
             const progressDetails = document.getElementById('progressDetails');
             
             if (isICP) {
-                loadingText.textContent = 'Searching for businesses without websites... This may take several minutes.';
+                loadingText.textContent = 'Searching for businesses without websites... This may take up to 60 seconds.';
                 progressInfo.style.display = 'block';
-                progressDetails.innerHTML = 'Initializing search...<br><small style="color: #666;">Will continue checking businesses until we find leads without websites</small>';
+                progressDetails.innerHTML = 'Initializing search...<br><small style="color: #666;">Vercel-optimized: Limited to 15 results for faster response</small>';
             } else {
-                loadingText.textContent = 'Scraping leads... This may take a few minutes.';
-                progressInfo.style.display = 'none';
-            }
-            
-            // Update progress periodically for ICP mode
-            if (isICP) {
-                updateProgressDisplay();
+                loadingText.textContent = 'Scraping leads... This may take up to 60 seconds.';
+                progressInfo.style.display = 'block';
+                progressDetails.innerHTML = 'Vercel-optimized: Limited to 20 results for faster response';
             }
             
             try {
@@ -748,70 +747,7 @@
                     throw new Error(data.error || 'Scraping failed');
                 }
                 
-                // For simple search, use polling for real-time updates
-                if (!isICP && data.session_id) {
-                    const sessionId = data.session_id;
-                    currentLeads = [];
-                    
-                    // Show results container immediately
-                    results.classList.add('active');
-                    const resultsCount = document.getElementById('resultsCount');
-                    const leadsContainer = document.getElementById('leadsContainer');
-                    if (resultsCount) {
-                        resultsCount.textContent = 'Scraping... (0 leads found so far)';
-                    }
-                    if (leadsContainer) {
-                        leadsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">⏳ Waiting for leads...</div>';
-                    }
-                    
-                    // Start polling for updates
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusResponse = await fetch(`/api/scrape-status/${sessionId}`);
-                            const statusData = await statusResponse.json();
-                            
-                            if (statusData.status === 'complete' || statusData.status === 'error') {
-                                clearInterval(pollInterval);
-                                currentLeads = statusData.leads || [];
-                                
-                                if (statusData.error) {
-                                    error.textContent = `Error: ${statusData.error}`;
-                                    error.classList.add('active');
-                                    loading.classList.remove('active');
-                                    scrapeBtn.disabled = false;
-                                } else if (currentLeads.length === 0) {
-                                    error.textContent = 'No leads found. Try different search terms.';
-                                    error.classList.add('active');
-                                    loading.classList.remove('active');
-                                    scrapeBtn.disabled = false;
-                                } else {
-                                    success.textContent = `Successfully scraped ${currentLeads.length} leads!`;
-                                    success.classList.add('active');
-                                    displayLeads(currentLeads, isICP, {});
-                                    loading.classList.remove('active');
-                                    scrapeBtn.disabled = false;
-                                }
-                            } else {
-                                // Update with new leads in real-time
-                                if (statusData.leads && statusData.leads.length > currentLeads.length) {
-                                    currentLeads = statusData.leads;
-                                    displayLeads(currentLeads, isICP, {});
-                                    
-                                    // Update count
-                                    if (resultsCount) {
-                                        resultsCount.textContent = `Found ${currentLeads.length} leads (scraping...)`;
-                                    }
-                                }
-                            }
-                        } catch (err) {
-                            console.error('Polling error:', err);
-                        }
-                    }, 2000); // Poll every 2 seconds
-                    
-                    return; // Exit early, polling will handle the rest
-                }
-                
-                // For ICP mode or if no session_id, use old method
+                // Vercel-optimized: Direct response (no polling needed)
                 currentLeads = data.leads || [];
                 const debugInfo = data.debug || {};
                 
