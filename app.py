@@ -1379,6 +1379,8 @@ def export_json():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # Get port from environment variable (Railway/Render sets this)
+    port = int(os.environ.get('PORT', 5000))
     # Disable debug mode to prevent server restarts that clear sessions
-    app.run(debug=False, port=5000, host='0.0.0.0')
+    app.run(debug=False, port=port, host='0.0.0.0')
 
