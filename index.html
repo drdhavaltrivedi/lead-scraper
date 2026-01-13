@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000; frame-ancestors 'self';">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
     <title>Lead Scraper - Business Data Extraction</title>
     <style>
         * {
@@ -48,6 +50,47 @@
             margin-bottom: 30px;
         }
 
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+            top: 2px;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -82,9 +125,31 @@
             gap: 20px;
         }
 
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
+            }
+            .tabs {
+                flex-direction: column;
             }
         }
 
@@ -116,13 +181,12 @@
             transform: none;
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            margin-left: 10px;
-        }
-
         .btn-success {
             background: #28a745;
+        }
+
+        .btn-icp {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .loading {
@@ -189,22 +253,6 @@
             border-collapse: collapse;
             margin-top: 20px;
             overflow-x: auto;
-            display: block;
-        }
-
-        .leads-table thead,
-        .leads-table tbody {
-            display: block;
-        }
-
-        .leads-table thead {
-            background: #f8f9fa;
-        }
-
-        .leads-table tr {
-            display: grid;
-            grid-template-columns: 1.5fr 2fr 1fr 1.5fr 1fr 1fr 1fr;
-            gap: 10px;
         }
 
         .leads-table th,
@@ -212,11 +260,10 @@
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .leads-table th {
+            background: #f8f9fa;
             font-weight: 600;
             color: #333;
             position: sticky;
@@ -228,14 +275,33 @@
         }
 
         .leads-table td {
-            max-width: 100%;
-            white-space: nowrap;
+            max-width: 200px;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .leads-table td.expandable {
             white-space: normal;
+            max-width: 300px;
+        }
+
+        .no-website-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .opportunity-badge {
+            background: #51cf66;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
         }
 
         .error {
@@ -270,27 +336,43 @@
             color: #6c757d;
         }
 
-        .empty-state svg {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-            opacity: 0.5;
+        .debug-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
         }
 
-        @media (max-width: 768px) {
-            .leads-table {
-                font-size: 0.85em;
-            }
-            
-            .leads-table tr {
-                grid-template-columns: 1fr;
-                gap: 5px;
-            }
-            
-            .leads-table th,
-            .leads-table td {
-                padding: 8px;
-            }
+        .debug-panel h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .debug-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .debug-stat {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .debug-stat-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .debug-stat-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
         }
     </style>
 </head>
@@ -302,48 +384,154 @@
         </div>
 
         <div class="card">
-            <form id="scrapeForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="location">📍 Location *</label>
-                        <input 
-                            type="text" 
-                            id="location" 
-                            name="location" 
-                            placeholder="e.g., New York, NY or San Francisco, CA"
-                            required
-                        >
+            <div class="tabs">
+                <button class="tab active" data-tab="simple">📋 Simple Search</button>
+                <button class="tab" data-tab="icp">🎯 ICP Mode - No Website</button>
+                <button class="tab" data-tab="influencer">💪 ICP Mode - Fitness Influencers</button>
+            </div>
+
+            <!-- Simple Search Tab -->
+            <div class="tab-content active" id="simple-tab">
+                <form id="scrapeForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">📍 Location *</label>
+                            <input 
+                                type="text" 
+                                id="location" 
+                                name="location" 
+                                placeholder="e.g., New York, NY or San Francisco, CA"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="work_type">💼 Business Type / Industry *</label>
+                            <input 
+                                type="text" 
+                                id="work_type" 
+                                name="work_type" 
+                                placeholder="e.g., restaurants, law firms, tech companies"
+                                required
+                            >
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="work_type">💼 Business Type / Industry *</label>
+                        <label for="max_results">📊 Maximum Results</label>
                         <input 
-                            type="text" 
-                            id="work_type" 
-                            name="work_type" 
-                            placeholder="e.g., restaurants, law firms, tech companies"
-                            required
+                            type="number" 
+                            id="max_results" 
+                            name="max_results" 
+                            value="50" 
+                            min="1" 
+                            max="100"
                         >
                     </div>
+                    <button type="submit" class="btn" id="scrapeBtn">
+                        🚀 Start Scraping
+                    </button>
+                </form>
+            </div>
+
+            <!-- Influencer ICP Tab -->
+            <div class="tab-content" id="influencer-tab">
+                <div class="info-box">
+                    <h4>💪 Perfect for Brand Partnerships & Collaborations!</h4>
+                    <p>This mode finds <strong>fitness influencers on Instagram with 10K+ followers</strong> - perfect for brand partnerships, sponsorships, and collaborations.</p>
+                    <p style="margin-top: 10px; font-size: 0.95em;"><strong>How it works:</strong> We search Instagram for fitness-related accounts, check their follower counts, and filter for influencers with your minimum follower requirement. Great for finding micro-influencers and macro-influencers in the fitness niche.</p>
                 </div>
-                <div class="form-group">
-                    <label for="max_results">📊 Maximum Results</label>
-                    <input 
-                        type="number" 
-                        id="max_results" 
-                        name="max_results" 
-                        value="50" 
-                        min="1" 
-                        max="100"
-                    >
+                <form id="influencerForm">
+                    <div class="form-group">
+                        <label for="min_followers">👥 Minimum Followers *</label>
+                        <input 
+                            type="number" 
+                            id="min_followers" 
+                            name="min_followers" 
+                            value="10000" 
+                            min="1000" 
+                            step="1000"
+                            required
+                        >
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Minimum follower count (e.g., 10000 for 10K+)
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="influencer_max_results">📊 Maximum Results</label>
+                        <input 
+                            type="number" 
+                            id="influencer_max_results" 
+                            name="influencer_max_results" 
+                            value="50" 
+                            min="1" 
+                            max="100"
+                        >
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Note: Instagram scraping may take longer due to rate limits. We'll check multiple accounts to find ones meeting your criteria.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-icp" id="influencerScrapeBtn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        💪 Find Fitness Influencers
+                    </button>
+                </form>
+            </div>
+
+            <!-- ICP Mode Tab -->
+            <div class="tab-content" id="icp-tab">
+                <div class="info-box">
+                    <h4>💡 Perfect for Web Developers!</h4>
+                    <p>This mode finds businesses that <strong>haven't added their website to their Google Maps listing</strong> - perfect leads for web development services!</p>
+                    <p style="margin-top: 10px; font-size: 0.95em;"><strong>How it works:</strong> We check Google Maps listings and identify businesses that exist on Google Maps but haven't added their website URL to their profile. These are ideal targets because they're already online (on Google Maps) but don't have their own website yet.</p>
                 </div>
-                <button type="submit" class="btn" id="scrapeBtn">
-                    🚀 Start Scraping
-                </button>
-            </form>
+                <form id="icpForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="icp_location">📍 Location *</label>
+                            <input 
+                                type="text" 
+                                id="icp_location" 
+                                name="icp_location" 
+                                placeholder="e.g., New York, NY or San Francisco, CA"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="icp_work_type">💼 Business Type / Industry *</label>
+                            <input 
+                                type="text" 
+                                id="icp_work_type" 
+                                name="icp_work_type" 
+                                placeholder="e.g., small stores, local shops, restaurants"
+                                required
+                            >
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="icp_max_results">📊 Maximum Results</label>
+                        <input 
+                            type="number" 
+                            id="icp_max_results" 
+                            name="icp_max_results" 
+                            value="50" 
+                            min="1" 
+                            max="100"
+                        >
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Note: This mode checks more businesses to find ones without websites, so it may take longer.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-icp" id="icpScrapeBtn">
+                        🎯 Find Businesses Without Websites
+                    </button>
+                </form>
+            </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p>Scraping leads... This may take a few minutes.</p>
+                <p id="loadingText">Scraping leads... This may take a few minutes.</p>
+                <div id="progressInfo" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Progress:</div>
+                    <div id="progressDetails" style="font-size: 0.9em; color: #666;"></div>
+                </div>
             </div>
 
             <div class="error" id="error"></div>
@@ -364,19 +552,57 @@
 
     <script>
         let currentLeads = [];
+        let currentMode = 'simple';
 
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                const tabContent = document.getElementById(`${tabName}-tab`);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                }
+                
+                currentMode = tabName;
+            });
+        });
+
+        // Simple Search Form
         document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const location = document.getElementById('location').value;
-            const work_type = document.getElementById('work_type').value;
-            const max_results = document.getElementById('max_results').value;
+            await scrapeLeads('simple');
+        });
+
+        // ICP Form
+        document.getElementById('icpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await scrapeLeads('icp');
+        });
+
+        // Influencer Form
+        document.getElementById('influencerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await scrapeInfluencers();
+        });
+
+        async function scrapeInfluencers() {
+            const min_followers = document.getElementById('min_followers').value;
+            const max_results = document.getElementById('influencer_max_results').value;
             
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const success = document.getElementById('success');
             const results = document.getElementById('results');
-            const scrapeBtn = document.getElementById('scrapeBtn');
+            const scrapeBtn = document.getElementById('influencerScrapeBtn');
             
             // Reset UI
             loading.classList.add('active');
@@ -385,8 +611,126 @@
             results.classList.remove('active');
             scrapeBtn.disabled = true;
             
+            const loadingText = document.getElementById('loadingText');
+            const progressInfo = document.getElementById('progressInfo');
+            const progressDetails = document.getElementById('progressDetails');
+            
+            loadingText.textContent = 'Searching Instagram for fitness influencers... This may take several minutes.';
+            progressInfo.style.display = 'block';
+            progressDetails.innerHTML = 'Initializing Instagram search...<br><small style="color: #666;">Checking follower counts and filtering for ' + parseInt(min_followers).toLocaleString() + '+ followers</small>';
+            
             try {
-                const response = await fetch('/api/scrape', {
+                const response = await fetch('/api/scrape-influencers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        min_followers: parseInt(min_followers),
+                        max_results: parseInt(max_results)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Scraping failed');
+                }
+                
+                currentLeads = data.leads || [];
+                const debugInfo = data.debug || {};
+                
+                if (currentLeads.length === 0) {
+                    let errorMsg = 'No fitness influencers found with ' + parseInt(min_followers).toLocaleString() + '+ followers. ';
+                    
+                    if (debugInfo) {
+                        errorMsg += `\n\nDebug Info:\n`;
+                        errorMsg += `- Accounts checked: ${debugInfo.checked || 0}\n`;
+                        errorMsg += `- Below threshold: ${debugInfo.below_threshold || 0}\n`;
+                        errorMsg += `- Found: ${debugInfo.found || 0}\n`;
+                        if (debugInfo.error) {
+                            errorMsg += `\nError: ${debugInfo.error}`;
+                        }
+                        if (debugInfo.checked === 0) {
+                            errorMsg += `\n\n💡 Tip: Instagram may require login or have rate limits. Try again later or adjust the minimum follower count.`;
+                        } else if (debugInfo.below_threshold > 0) {
+                            errorMsg += `\n\n💡 Tip: We found ${debugInfo.below_threshold} accounts but they were below ${parseInt(min_followers).toLocaleString()} followers. Try lowering the minimum follower count.`;
+                        }
+                    }
+                    
+                    error.textContent = errorMsg;
+                    error.style.whiteSpace = 'pre-line';
+                    error.classList.add('active');
+                    
+                    if (debugInfo && (debugInfo.checked > 0 || debugInfo.error)) {
+                        showDebugPanel(debugInfo);
+                    }
+                } else {
+                    let message = `Found ${currentLeads.length} fitness influencers with ${parseInt(min_followers).toLocaleString()}+ followers!`;
+                    
+                    if (debugInfo) {
+                        message += `\n\nChecked ${debugInfo.checked || 0} Instagram accounts.`;
+                    }
+                    
+                    success.textContent = message;
+                    success.style.whiteSpace = 'pre-line';
+                    success.classList.add('active');
+                    displayInfluencers(currentLeads, debugInfo);
+                    
+                    if (debugInfo) {
+                        showDebugPanel(debugInfo);
+                    }
+                }
+                
+            } catch (err) {
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+                scrapeBtn.disabled = false;
+            }
+        }
+
+        async function scrapeLeads(mode) {
+            const isICP = mode === 'icp';
+            const location = isICP ? document.getElementById('icp_location').value : document.getElementById('location').value;
+            const work_type = isICP ? document.getElementById('icp_work_type').value : document.getElementById('work_type').value;
+            const max_results = isICP ? document.getElementById('icp_max_results').value : document.getElementById('max_results').value;
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            const results = document.getElementById('results');
+            const scrapeBtn = isICP ? document.getElementById('icpScrapeBtn') : document.getElementById('scrapeBtn');
+            
+            // Reset UI
+            loading.classList.add('active');
+            error.classList.remove('active');
+            success.classList.remove('active');
+            results.classList.remove('active');
+            scrapeBtn.disabled = true;
+            
+            const loadingText = document.getElementById('loadingText');
+            const progressInfo = document.getElementById('progressInfo');
+            const progressDetails = document.getElementById('progressDetails');
+            
+            if (isICP) {
+                loadingText.textContent = 'Searching for businesses without websites... This may take several minutes.';
+                progressInfo.style.display = 'block';
+                progressDetails.innerHTML = 'Initializing search...<br><small style="color: #666;">Will continue checking businesses until we find leads without websites</small>';
+            } else {
+                loadingText.textContent = 'Scraping leads... This may take a few minutes.';
+                progressInfo.style.display = 'none';
+            }
+            
+            // Update progress periodically for ICP mode
+            if (isICP) {
+                updateProgressDisplay();
+            }
+            
+            try {
+                const endpoint = isICP ? '/api/scrape-icp' : '/api/scrape';
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -404,15 +748,126 @@
                     throw new Error(data.error || 'Scraping failed');
                 }
                 
+                // For simple search, use polling for real-time updates
+                if (!isICP && data.session_id) {
+                    const sessionId = data.session_id;
+                    currentLeads = [];
+                    
+                    // Show results container immediately
+                    results.classList.add('active');
+                    const resultsCount = document.getElementById('resultsCount');
+                    const leadsContainer = document.getElementById('leadsContainer');
+                    if (resultsCount) {
+                        resultsCount.textContent = 'Scraping... (0 leads found so far)';
+                    }
+                    if (leadsContainer) {
+                        leadsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">⏳ Waiting for leads...</div>';
+                    }
+                    
+                    // Start polling for updates
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusResponse = await fetch(`/api/scrape-status/${sessionId}`);
+                            const statusData = await statusResponse.json();
+                            
+                            if (statusData.status === 'complete' || statusData.status === 'error') {
+                                clearInterval(pollInterval);
+                                currentLeads = statusData.leads || [];
+                                
+                                if (statusData.error) {
+                                    error.textContent = `Error: ${statusData.error}`;
+                                    error.classList.add('active');
+                                    loading.classList.remove('active');
+                                    scrapeBtn.disabled = false;
+                                } else if (currentLeads.length === 0) {
+                                    error.textContent = 'No leads found. Try different search terms.';
+                                    error.classList.add('active');
+                                    loading.classList.remove('active');
+                                    scrapeBtn.disabled = false;
+                                } else {
+                                    success.textContent = `Successfully scraped ${currentLeads.length} leads!`;
+                                    success.classList.add('active');
+                                    displayLeads(currentLeads, isICP, {});
+                                    loading.classList.remove('active');
+                                    scrapeBtn.disabled = false;
+                                }
+                            } else {
+                                // Update with new leads in real-time
+                                if (statusData.leads && statusData.leads.length > currentLeads.length) {
+                                    currentLeads = statusData.leads;
+                                    displayLeads(currentLeads, isICP, {});
+                                    
+                                    // Update count
+                                    if (resultsCount) {
+                                        resultsCount.textContent = `Found ${currentLeads.length} leads (scraping...)`;
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Polling error:', err);
+                        }
+                    }, 2000); // Poll every 2 seconds
+                    
+                    return; // Exit early, polling will handle the rest
+                }
+                
+                // For ICP mode or if no session_id, use old method
                 currentLeads = data.leads || [];
+                const debugInfo = data.debug || {};
                 
                 if (currentLeads.length === 0) {
-                    error.textContent = 'No leads found. Try different search terms.';
+                    let errorMsg = isICP 
+                        ? 'No businesses without websites found after checking all available businesses. ' 
+                        : 'No leads found. ';
+                    
+                    if (isICP && debugInfo) {
+                        errorMsg += `\n\nDebug Info:\n`;
+                        errorMsg += `- Businesses checked: ${debugInfo.checked || 0}\n`;
+                        errorMsg += `- Businesses with websites: ${debugInfo.with_websites || 0}\n`;
+                        errorMsg += `- Businesses without websites: ${debugInfo.without_websites || 0}\n`;
+                        if (debugInfo.error) {
+                            errorMsg += `\nError: ${debugInfo.error}`;
+                        }
+                        if (debugInfo.checked === 0) {
+                            errorMsg += `\n\nTip: Try a different location or business type. Make sure the search terms are specific (e.g., "small stores", "local shops", "restaurants").`;
+                        } else if (debugInfo.with_websites > 0 && debugInfo.checked < 20) {
+                            errorMsg += `\n\n💡 Tip: We only checked ${debugInfo.checked} businesses. Try increasing "Max Results" to check more businesses, or try a different area/business type like "small stores" or "local shops" in a smaller area.`;
+                        } else if (debugInfo.with_websites > 0) {
+                            errorMsg += `\n\n💡 Tip: We checked ${debugInfo.checked} businesses but they all have websites listed. Try:\n- A different location (smaller area, different neighborhood)\n- More specific business types: "small stores", "local shops", "mom and pop stores", "family businesses"\n- Increase "Max Results" to check even more businesses`;
+                        }
+                    } else {
+                        errorMsg += 'Try different search terms.';
+                    }
+                    
+                    error.textContent = errorMsg;
+                    error.style.whiteSpace = 'pre-line';
                     error.classList.add('active');
+                    
+                    // Show debug panel if available
+                    if (isICP && debugInfo && (debugInfo.checked > 0 || debugInfo.error)) {
+                        showDebugPanel(debugInfo);
+                    }
                 } else {
-                    success.textContent = `Successfully scraped ${currentLeads.length} leads!`;
+                    let message = isICP 
+                        ? `Found ${currentLeads.length} businesses without websites in their Google Maps listing - perfect leads for web development!`
+                        : `Successfully scraped ${currentLeads.length} leads!`;
+                    
+                    if (isICP && debugInfo) {
+                        message += `\n\nChecked ${debugInfo.checked || 0} businesses on Google Maps.`;
+                        if (debugInfo.with_websites > 0) {
+                            message += `\n${debugInfo.with_websites} had websites listed, ${debugInfo.without_websites} did not.`;
+                        }
+                    }
+                    
+                    success.textContent = message;
+                    success.style.whiteSpace = 'pre-line';
                     success.classList.add('active');
-                    displayLeads(currentLeads);
+                    displayLeads(currentLeads, isICP, debugInfo);
+                    
+                    // Show debug panel if available
+                    if (isICP && debugInfo) {
+                        showDebugPanel(debugInfo);
+                    }
                 }
                 
             } catch (err) {
@@ -422,25 +877,24 @@
                 loading.classList.remove('active');
                 scrapeBtn.disabled = false;
             }
-        });
+        }
         
-        function displayLeads(leads) {
+        function displayInfluencers(influencers, debugInfo = {}) {
             const container = document.getElementById('leadsContainer');
             const results = document.getElementById('results');
             const resultsCount = document.getElementById('resultsCount');
             
-            resultsCount.textContent = `Found ${leads.length} leads`;
+            let modeText = 'fitness influencers';
+            if (debugInfo && debugInfo.checked) {
+                modeText += ` (checked ${debugInfo.checked} accounts)`;
+            }
+            resultsCount.textContent = `Found ${influencers.length} ${modeText}`;
             results.classList.add('active');
             
-            if (leads.length === 0) {
+            if (influencers.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        <p>No leads found. Try adjusting your search criteria.</p>
+                        <p>No influencers found. Try adjusting the minimum follower count.</p>
                     </div>
                 `;
                 return;
@@ -451,30 +905,100 @@
                     <table class="leads-table">
                         <thead>
                             <tr>
+                                <th>Username</th>
                                 <th>Name</th>
-                                <th>Address</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Website</th>
-                                <th>Category</th>
-                                <th>Rating</th>
+                                <th>Followers</th>
+                                <th>Bio</th>
+                                <th>Profile</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            influencers.forEach(influencer => {
+                const followerCount = influencer.followers ? influencer.followers.toLocaleString() : influencer.follower_text || 'N/A';
+                tableHTML += `
+                    <tr>
+                        <td><strong>@${escapeHtml(influencer.username || 'N/A')}</strong></td>
+                        <td>${escapeHtml(influencer.name || 'N/A')}</td>
+                        <td><span class="opportunity-badge">${followerCount}</span></td>
+                        <td class="expandable">${escapeHtml(influencer.bio || 'N/A')}</td>
+                        <td><a href="${influencer.profile_url}" target="_blank" rel="noopener">View Profile</a></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+
+        function displayLeads(leads, isICP = false, debugInfo = {}) {
+            const container = document.getElementById('leadsContainer');
+            const results = document.getElementById('results');
+            const resultsCount = document.getElementById('resultsCount');
+            
+            let modeText = isICP ? 'businesses without websites' : 'leads';
+            if (isICP && debugInfo && debugInfo.checked) {
+                modeText += ` (checked ${debugInfo.checked} total)`;
+            }
+            resultsCount.textContent = `Found ${leads.length} ${modeText}`;
+            results.classList.add('active');
+            
+            if (leads.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No leads found. Try adjusting your search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const columns = isICP 
+                ? ['Name', 'Address', 'Phone', 'Website Status', 'Category', 'Rating', 'Opportunity']
+                : ['Name', 'Address', 'Phone', 'Email', 'Website', 'Category', 'Rating'];
+            
+            let tableHTML = `
+                <div style="overflow-x: auto;">
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                ${columns.map(col => `<th>${col}</th>`).join('')}
                             </tr>
                         </thead>
                         <tbody>
             `;
             
             leads.forEach(lead => {
-                tableHTML += `
-                    <tr>
-                        <td><strong>${escapeHtml(lead.name || 'N/A')}</strong></td>
-                        <td class="expandable">${escapeHtml(lead.address || 'N/A')}</td>
-                        <td>${escapeHtml(lead.phone || 'N/A')}</td>
-                        <td>${escapeHtml(lead.email || 'N/A')}</td>
-                        <td>${lead.website ? `<a href="${lead.website}" target="_blank" rel="noopener">Visit</a>` : 'N/A'}</td>
-                        <td>${escapeHtml(lead.category || 'N/A')}</td>
-                        <td>${escapeHtml(lead.rating || 'N/A')}</td>
-                    </tr>
-                `;
+                if (isICP) {
+                    tableHTML += `
+                        <tr>
+                            <td><strong>${escapeHtml(lead.name || 'N/A')}</strong></td>
+                            <td class="expandable">${escapeHtml(lead.address || 'N/A')}</td>
+                            <td>${escapeHtml(lead.phone || 'N/A')}</td>
+                            <td><span class="no-website-badge">Not Listed</span></td>
+                            <td>${escapeHtml(lead.category || 'N/A')}</td>
+                            <td>${escapeHtml(lead.rating || 'N/A')}</td>
+                            <td><span class="opportunity-badge">Web Dev Opportunity</span></td>
+                        </tr>
+                    `;
+                } else {
+                    tableHTML += `
+                        <tr>
+                            <td><strong>${escapeHtml(lead.name || 'N/A')}</strong></td>
+                            <td class="expandable">${escapeHtml(lead.address || 'N/A')}</td>
+                            <td>${escapeHtml(lead.phone || 'N/A')}</td>
+                            <td>${escapeHtml(lead.email || 'N/A')}</td>
+                            <td>${lead.website && lead.website !== 'No Website' ? `<a href="${lead.website}" target="_blank" rel="noopener">Visit</a>` : 'N/A'}</td>
+                            <td>${escapeHtml(lead.category || 'N/A')}</td>
+                            <td>${escapeHtml(lead.rating || 'N/A')}</td>
+                        </tr>
+                    `;
+                }
             });
             
             tableHTML += `
@@ -490,6 +1014,75 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function updateProgressDisplay() {
+            // This will be called periodically to show that we're still searching
+            let checkCount = 0;
+            const progressInterval = setInterval(() => {
+                checkCount += 3;
+                const progressDetails = document.getElementById('progressDetails');
+                if (progressDetails && document.getElementById('loading').classList.contains('active')) {
+                    progressDetails.innerHTML = `
+                        <div style="margin-bottom: 5px;">⏳ Checking businesses... (estimated ${checkCount}+ checked)</div>
+                        <div style="font-size: 0.85em; color: #666;">💡 Tip: We continue searching until we find businesses without websites. This may take a few minutes.</div>
+                    `;
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 5000); // Update every 5 seconds
+        }
+
+        function showDebugPanel(debugInfo) {
+            const container = document.getElementById('leadsContainer');
+            let debugHTML = `
+                <div class="debug-panel">
+                    <h4>📊 Scraping Statistics</h4>
+                    <div class="debug-stats">
+                        <div class="debug-stat">
+                            <div class="debug-stat-label">Total Checked</div>
+                            <div class="debug-stat-value">${debugInfo.checked || 0}</div>
+                        </div>
+                        <div class="debug-stat">
+                            <div class="debug-stat-label">With Websites</div>
+                            <div class="debug-stat-value">${debugInfo.with_websites || 0}</div>
+                        </div>
+                        <div class="debug-stat">
+                            <div class="debug-stat-label">Without Websites</div>
+                            <div class="debug-stat-value" style="color: #28a745;">${debugInfo.without_websites || 0}</div>
+                        </div>
+                    </div>
+            `;
+            
+            if (debugInfo.error) {
+                debugHTML += `
+                    <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                        <strong>⚠️ Error:</strong> ${escapeHtml(debugInfo.error)}
+                    </div>
+                `;
+            }
+            
+            if (debugInfo.details && debugInfo.details.length > 0) {
+                debugHTML += `
+                    <div style="margin-top: 15px;">
+                        <strong>Recent Activity:</strong>
+                        <div style="max-height: 150px; overflow-y: auto; background: white; padding: 10px; border-radius: 5px; margin-top: 5px; font-family: monospace; font-size: 0.85em;">
+                            ${debugInfo.details.slice(-10).map(d => escapeHtml(d)).join('<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            debugHTML += `</div>`;
+            
+            // Insert at the beginning of container
+            if (container) {
+                const existingDebug = container.querySelector('.debug-panel');
+                if (existingDebug) {
+                    existingDebug.remove();
+                }
+                container.insertAdjacentHTML('afterbegin', debugHTML);
+            }
         }
         
         document.getElementById('exportCSV').addEventListener('click', async () => {
@@ -556,4 +1149,3 @@
     </script>
 </body>
 </html>
-
