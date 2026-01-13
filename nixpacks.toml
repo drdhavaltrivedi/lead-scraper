@@ -1,12 +1,15 @@
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pip"]
+nixPkgs = ["python312"]
 
 [phases.install]
 cmds = [
+  "python -m venv /opt/venv",
+  "source /opt/venv/bin/activate",
+  "pip install --upgrade pip",
   "pip install -r requirements.txt",
   "playwright install chromium",
   "playwright install-deps chromium"
 ]
 
 [start]
-cmd = "python app.py"
+cmd = "source /opt/venv/bin/activate && python app.py"
